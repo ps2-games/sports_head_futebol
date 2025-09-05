@@ -1,5 +1,5 @@
-import DustParticle from "./vfx/dust.js";
-import { KICK, PARTICLES, PLAYER } from '../constants.js'
+import DustParticle from './vfx/dust.js';
+import { KICK, PARTICLES, PLAYER } from '../constants.js';
 
 export default class Player {
     constructor(port = 0, character = 1) {
@@ -7,11 +7,11 @@ export default class Player {
         this.character = new Image(`./assets/characters/character${character}.png`);
         this.jumpSound = Sound.Sfx('./assets/sounds/jump.adp');
         this.feet = new Image('./assets/characters/feet.png');
+        this.feet.startx = 0;
+        this.feet.endx = 20;
 
         this.feet.width = 20;
         this.feet.height = 18;
-        this.feet.startx = 0;
-        this.feet.endx = 20;
 
         this.maxX = 630;
         this.minX = 10;
@@ -38,7 +38,6 @@ export default class Player {
 
     updateKick(dt) {
         if (!this.kick.active) return;
-
         const speed = dt / KICK.KICK_DURATION;
         const holding = this.pads.pressed(Pads.CROSS) || this.pads.pressed(Pads.SPACE);
 
@@ -48,9 +47,7 @@ export default class Player {
                 if (this.kick.t >= 1) this.kick.t = 1;
             }
         } else {
-            if (this.kick.forward) {
-                this.kick.forward = false;
-            }
+            if (this.kick.forward) this.kick.forward = false;
             this.kick.t -= speed;
             if (this.kick.t <= 0) {
                 this.kick.t = 0;
@@ -63,7 +60,6 @@ export default class Player {
         const arc = KICK.START + (KICK.END - KICK.START) * biasedT;
         this.kick.angle = arc;
 
-
         const startRad = KICK.FOOT_ANGLE_START * Math.PI / 180;
         const endRad = KICK.FOOT_ANGLE_END * Math.PI / 180;
         this.footVisualAngle = startRad + (endRad - startRad) * this.kick.t;
@@ -73,11 +69,29 @@ export default class Player {
         const pivotX = this.character.position.x + this.character.width / 2 - 5;
         const pivotY = this.character.position.y + this.character.height / 2 - 5;
         const r = KICK.LEG_LENGTH;
-
         return {
             x: pivotX + Math.cos(this.kick.angle) * r,
-            y: pivotY + Math.sin(this.kick.angle) * r + this.character.height / 2 - this.feet.height,
+            y: pivotY + Math.sin(this.kick.angle) * r + this.character.height / 2 - this.feet.height
         };
+    }
+
+    getCenter() {
+        return {
+            x: this.character.position.x + this.character.width / 2,
+            y: this.character.position.y + this.character.height / 2
+        };
+    }
+
+    getFootOBB() {
+        const fw = this.feet.width;
+        const fh = this.feet.height;
+        const angle = this.footVisualAngle;
+        const footPos = this.calcFootPosition();
+        const cx = footPos.x + fw / 2;
+        const cy = footPos.y + fh / 2;
+        const u = { x: Math.cos(angle), y: Math.sin(angle) };
+        const v = { x: -Math.sin(angle), y: Math.cos(angle) };
+        return { cx, cy, halfW: fw / 2, halfH: fh / 2, u, v };
     }
 
     jump() {
@@ -127,9 +141,7 @@ export default class Player {
                 this.kick.t = 0;
             }
         } else {
-            if (this.kick.active && this.kick.forward) {
-                this.kick.forward = false;
-            }
+            if (this.kick.active && this.kick.forward) this.kick.forward = false;
         }
     }
 
@@ -167,22 +179,47 @@ export default class Player {
         return this.character.position.y >= PLAYER.GROUND_POSITION;
     }
 
-    update() {
+    drawFootDebug() {
+        const obb = this.getFootOBB();
+        const hw = obb.halfW;
+        const hh = obb.halfH;
+        const pts = [
+            { x: -hw, y: -hh },
+            { x: hw, y: -hh },
+            { x: hw, y: hh },
+            { x: -hw, y: hh }
+        ].map(p => ({
+            x: obb.cx + p.x * obb.u.x + p.y * obb.v.x,
+            y: obb.cy + p.x * obb.u.y + p.y * obb.v.y
+        }));
+
+        Draw.line(pts[0].x, pts[0].y, pts[1].x, pts[1].y, Color.new(255, 255, 255));
+        Draw.line(pts[1].x, pts[1].y, pts[2].x, pts[2].y, Color.new(255, 255, 255));
+        Draw.line(pts[2].x, pts[2].y, pts[3].x, pts[3].y, Color.new(255, 255, 255));
+        Draw.line(pts[3].x, pts[3].y, pts[0].x, pts[0].y, Color.new(255, 255, 255));
+    }
+
+    update(dt = 16) {
         this.pads.update();
         this.handleInput();
         this.applyGravity();
         this.blockVelocity();
         this.updatePosition();
         this.resetVelocityWhenGrounded();
-        this.updateKick(16)
+        this.updateKick(dt);
         this.createDustParticles();
         this.updateDustParticles();
         this.drawDustParticles();
 
         this.character.draw(this.character.position.x, this.character.position.y);
 
-        const foot = this.calcFootPosition();
+        const cen = this.getCenter();
+        Draw.circle(cen.x, cen.y, this.character.width / 2, Color.new(0, 255, 0, 60));
+
+        const footPos = this.calcFootPosition();
         this.feet.angle = this.footVisualAngle;
-        this.feet.draw(foot.x, foot.y);
+        this.feet.draw(footPos.x, footPos.y);
+
+        this.drawFootDebug();
     }
 }

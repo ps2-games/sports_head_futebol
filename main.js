@@ -13,11 +13,11 @@ Screen.display(() => {
     background.draw(0, 0)
     // shadow.draw(0, 0)
 
-    player.update();
-    ball.update();
-
-    ball.checkFootCollision(player)
-    ball.checkPlayerCollision(player)
+    const dt = 16; // ms
+    ball.update(dt);
+    player.update(dt);
+    ball.checkPlayerCollision(player);
+    ball.checkFootCollision(player);
 
     goal.width = 62;
     goal.draw(0, 356 - (goal.height / 2 + 5));

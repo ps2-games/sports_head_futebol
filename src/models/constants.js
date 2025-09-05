@@ -22,7 +22,7 @@ export const PARTICLES = {
 }
 
 export const BALL = {
-    RADIUS: 15,
+    RADIUS: 20,
     GRAVITY: 0.4,
     BOUNCE: 0.7,
     FRICTION: 0.98,
@@ -30,9 +30,15 @@ export const BALL = {
     MAX_VELOCITY: 12,
     KICK_POWER_MIN: 3,
     KICK_POWER_MAX: 10,
-    FOOT_COLLISION_RADIUS: 12,
-    PLAYER_COLLISION_RADIUS: 25,
     GROUND_POSITION: 397,
+}
+
+export const COLLISION = {
+    PLAYER_R: 22,
+    FOOT_R: 10,
+    RESTITUTION: 0.6,
+    FOOT_RESTITUTION: 0.75,
+    MAX_STEP_FRAC: 1.8,
 }
 
 
