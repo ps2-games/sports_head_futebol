@@ -1,5 +1,5 @@
 import DustParticle from "./vfx/dust.js";
-import { KICK, PARTICLES, PLAYER } from './constants.js'
+import { KICK, PARTICLES, PLAYER } from '../constants.js'
 
 export default class Player {
     constructor(port = 0, character = 1) {
